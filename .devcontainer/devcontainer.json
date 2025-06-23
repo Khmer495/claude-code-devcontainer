@@ -1,0 +1,62 @@
+{
+  "name": "Claude Code Sandbox",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:Asia/Tokyo}",
+      "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+    }
+  },
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW",
+    "--sysctl=net.ipv4.ip_forward=1"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        }
+      }
+    }
+  },
+  "remoteUser": "node",
+  "mounts": [
+    "source=claude-code-bashhistory,target=/commandhistory,type=volume",
+    "source=claude-code-config,target=/home/node/.claude,type=volume"
+  ],
+  "remoteEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=delegated",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "postStartCommand": "sudo /usr/local/bin/start-proxy.sh",
+  "containerEnv": {
+    "http_proxy": "http://localhost:3128",
+    "https_proxy": "http://localhost:3128",
+    "HTTP_PROXY": "http://localhost:3128",
+    "HTTPS_PROXY": "http://localhost:3128",
+    "no_proxy": "localhost,127.0.0.1,::1",
+    "NO_PROXY": "localhost,127.0.0.1,::1"
+  }
+}

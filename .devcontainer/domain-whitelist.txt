@@ -1,0 +1,71 @@
+# AWS domains
+.amazonaws.com
+.aws.amazon.com
+.console.aws.amazon.com
+.cloudfront.net
+.elasticbeanstalk.com
+
+# Terraform Cloud
+.terraform.io
+
+# GitHub
+.github.com
+.githubusercontent.com
+
+# Package repositories
+.npmjs.org
+.pypi.org
+files.pythonhosted.org
+
+# Docker
+.docker.io
+.docker.com
+
+# Development tools
+.visualstudio.com
+.vscode-cdn.net
+.microsoft.com
+
+# Claude AI
+.anthropic.com
+claude.ai
+
+# Essential services
+.google.com
+.googleapis.com
+.cloudflare.com
+.ubuntu.com
+.debian.org
+
+# Monitoring and logging
+.datadoghq.com
+.newrelic.com
+.sentry.io
+
+# SSL/TLS
+.letsencrypt.org
+.digicert.com
+
+# DNS
+8.8.8.8
+8.8.4.4
+1.1.1.1
+
+# Go development
+.golang.org
+go.dev
+.gopkg.in
+
+# Terraform providers
+.hashicorp.com
+
+# Flutter/Dart development
+.flutter.dev
+.dart.dev
+pub.dev
+.flutter-io.cn
+
+# Additional AWS services
+.awsstatic.com
+.s3.amazonaws.com
+phd.aws.amazon.com
