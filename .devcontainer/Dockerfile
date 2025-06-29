@@ -23,8 +23,12 @@ RUN apt update && apt install -y less \
   curl \
   squid \
   openssl \
-  locales && \
+  locales \
+  software-properties-common && \
   locale-gen en_US.UTF-8
+
+# Create linuxbrew home directory and set permissions
+RUN mkdir -p /home/linuxbrew && chown -R node:node /home/linuxbrew
 
 # Set locale environment variables
 ENV LANG=en_US.UTF-8
@@ -72,6 +76,14 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # Set up non-root user
 USER node
 
+# Install Homebrew as node user
+RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Set up Homebrew environment
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc && \
+  echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc
+
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PATH=$PATH:/usr/local/share/npm-global/bin
@@ -90,6 +102,20 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install asdf via Homebrew
+RUN /home/linuxbrew/.linuxbrew/bin/brew install asdf && \
+  echo 'export PATH="/home/node/.asdf/shims:$PATH"' >> ~/.bashrc && \
+  echo '. "/home/linuxbrew/.linuxbrew/opt/asdf/libexec/asdf.sh"' >> ~/.bashrc && \
+  echo 'export PATH="/home/node/.asdf/shims:$PATH"' >> ~/.zshrc && \
+  echo '. "/home/linuxbrew/.linuxbrew/opt/asdf/libexec/asdf.sh"' >> ~/.zshrc
+
+# Install terraform via asdf
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  asdf plugin add terraform https://github.com/asdf-community/asdf-hashicorp.git && \
+  asdf install terraform latest && \
+  asdf set --home terraform latest && \
+  asdf reshim
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
