@@ -117,6 +117,21 @@ RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
   asdf set --home terraform latest && \
   asdf reshim
 
+# Install go via asdf
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  asdf plugin add golang https://github.com/asdf-community/asdf-golang.git && \
+  asdf install golang latest && \
+  asdf set --home golang latest && \
+  asdf reshim
+
+# Install flutter via asdf
+# Note: Flutter download is large (~1.3GB) and may take some time
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
+  asdf install flutter 3.19.5 && \
+  asdf set --home flutter 3.19.5 && \
+  asdf reshim
+
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
 COPY domain-whitelist.txt /usr/local/bin/
