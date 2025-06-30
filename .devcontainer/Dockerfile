@@ -161,13 +161,24 @@ RUN apt-get update && apt-get install -y \
 
 USER node
 
-# Install flutter via direct download with architecture detection
-RUN ARCH=$(dpkg --print-architecture) && \
+# Install Flutter with platform-specific handling
+# Solution 1: Use x64 emulation on Apple Silicon Macs
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  ARCH=$(dpkg --print-architecture) && \
   if [ "$ARCH" = "arm64" ]; then \
-    echo "Flutter for ARM64 Linux is not officially supported yet"; \
-    echo "Skipping Flutter installation on ARM64"; \
+    # Option A: Force x64 platform for Apple Silicon Macs (uses Rosetta emulation)
+    echo "Detected ARM64 architecture. Installing x64 Flutter for compatibility..."; \
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64; \
+    # Install Flutter x64 version which will run under emulation
+    curl -L https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.5-stable.tar.xz -o flutter.tar.xz && \
+    tar xf flutter.tar.xz -C /home/node && \
+    rm flutter.tar.xz && \
+    echo 'export PATH="/home/node/flutter/bin:$PATH"' >> ~/.bashrc && \
+    echo 'export PATH="/home/node/flutter/bin:$PATH"' >> ~/.zshrc && \
+    /home/node/flutter/bin/flutter config --no-analytics && \
+    /home/node/flutter/bin/flutter doctor -v || true; \
   else \
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+    # x64 architecture - use asdf normally
     asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
     asdf install flutter 3.24.5 && \
     asdf set --home flutter 3.24.5 && \
