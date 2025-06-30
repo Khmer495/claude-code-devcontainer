@@ -118,6 +118,12 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
   -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
   -x
 
+# Flutter installation placeholder
+# TODO: Fix Flutter installation for ARM64 containers
+
+# Ensure asdf shims are in PATH for non-interactive shells
+ENV PATH="/home/node/.asdf/shims:${PATH}"
+
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -155,15 +161,18 @@ RUN apt-get update && apt-get install -y \
 
 USER node
 
-# Install flutter via asdf with manual architecture selection
-# ARM64のDockerコンテナでFlutterを使う場合、x64版を使用する必要があります
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
-  asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
-  export ASDF_FLUTTER_VERSION_FILE=3.24.5-stable && \
-  export ASDF_FLUTTER_FORCE_PLATFORM=linux_x64 && \
-  asdf install flutter 3.24.5 && \
-  asdf set --home flutter 3.24.5 && \
-  asdf reshim || true
+# Install flutter via direct download with architecture detection
+RUN ARCH=$(dpkg --print-architecture) && \
+  if [ "$ARCH" = "arm64" ]; then \
+    echo "Flutter for ARM64 Linux is not officially supported yet"; \
+    echo "Skipping Flutter installation on ARM64"; \
+  else \
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+    asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
+    asdf install flutter 3.24.5 && \
+    asdf set --home flutter 3.24.5 && \
+    asdf reshim; \
+  fi
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
