@@ -137,19 +137,14 @@ RUN apt-get update && apt-get install -y \
 
 USER node
 
-# Install flutter via direct download (asdf flutter plugin has architecture issues)
-RUN ARCH=$(dpkg --print-architecture) && \
-  if [ "$ARCH" = "arm64" ]; then \
-    FLUTTER_ARCH="arm64"; \
-  else \
-    FLUTTER_ARCH="x64"; \
-  fi && \
-  cd ~ && \
-  wget -O flutter.tar.xz https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_ARCH}-3.32.5-stable.tar.xz && \
-  tar xf flutter.tar.xz && \
-  rm flutter.tar.xz && \
-  echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.bashrc && \
-  echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.zshrc
+# Install flutter via asdf
+# Set FLUTTER_STORAGE_BASE_URL to use the correct mirror for architecture
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
+  export FLUTTER_STORAGE_BASE_URL="https://storage.googleapis.com" && \
+  asdf install flutter 3.24.5-stable && \
+  asdf set --home flutter 3.24.5-stable && \
+  asdf reshim
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
