@@ -124,12 +124,32 @@ RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
   asdf set --home golang latest && \
   asdf reshim
 
-# Install flutter via asdf
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
-  asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
-  asdf install flutter latest && \
-  asdf set --home flutter latest && \
-  asdf reshim
+# Install flutter dependencies
+USER root
+RUN apt-get update && apt-get install -y \
+  clang \
+  cmake \
+  ninja-build \
+  pkg-config \
+  libgtk-3-dev \
+  liblzma-dev \
+  libstdc++-12-dev
+
+USER node
+
+# Install flutter via direct download (asdf flutter plugin has architecture issues)
+RUN ARCH=$(dpkg --print-architecture) && \
+  if [ "$ARCH" = "arm64" ]; then \
+    FLUTTER_ARCH="arm64"; \
+  else \
+    FLUTTER_ARCH="x64"; \
+  fi && \
+  cd ~ && \
+  wget -O flutter.tar.xz https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_ARCH}-3.32.5-stable.tar.xz && \
+  tar xf flutter.tar.xz && \
+  rm flutter.tar.xz && \
+  echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.bashrc && \
+  echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.zshrc
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
