@@ -30,10 +30,24 @@ RUN apt update && apt install -y less \
 # Create linuxbrew home directory and set permissions
 RUN mkdir -p /home/linuxbrew && chown -R node:node /home/linuxbrew
 
-# Set locale environment variables
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
+# Set locale environment variables for Japanese
+ENV LANG=ja_JP.UTF-8
+ENV LANGUAGE=ja_JP:ja
+ENV LC_ALL=ja_JP.UTF-8
+ENV TZ=Asia/Tokyo
+
+# Configure locale properly for Japanese
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+  sed -i '/ja_JP.UTF-8/s/^# //g' /etc/locale.gen && \
+  locale-gen && \
+  update-locale LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 && \
+  ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install Japanese fonts for better display
+RUN apt-get update && apt-get install -y \
+  fonts-noto-cjk \
+  fonts-noto-color-emoji \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install AWS CLI v2 with architecture detection
 RUN ARCH=$(dpkg --print-architecture) && \
@@ -82,7 +96,11 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 # Set up Homebrew environment
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc && \
-  echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc
+  echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc && \
+  echo 'export LANG=ja_JP.UTF-8' >> ~/.bashrc && \
+  echo 'export LC_ALL=ja_JP.UTF-8' >> ~/.bashrc && \
+  echo 'export LANG=ja_JP.UTF-8' >> ~/.zshrc && \
+  echo 'export LC_ALL=ja_JP.UTF-8' >> ~/.zshrc
 
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
@@ -100,6 +118,12 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
   -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
   -x
 
+# Flutter installation placeholder
+# TODO: Fix Flutter installation for ARM64 containers
+
+# Ensure asdf shims are in PATH for non-interactive shells
+ENV PATH="/home/node/.asdf/shims:${PATH}"
+
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -116,6 +140,50 @@ RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
   asdf install terraform latest && \
   asdf set --home terraform latest && \
   asdf reshim
+
+# Install go via asdf
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  asdf plugin add golang https://github.com/asdf-community/asdf-golang.git && \
+  asdf install golang latest && \
+  asdf set --home golang latest && \
+  asdf reshim
+
+# Install flutter dependencies
+USER root
+RUN apt-get update && apt-get install -y \
+  clang \
+  cmake \
+  ninja-build \
+  pkg-config \
+  libgtk-3-dev \
+  liblzma-dev \
+  libstdc++-12-dev
+
+USER node
+
+# Install Flutter with platform-specific handling
+# Solution 1: Use x64 emulation on Apple Silicon Macs
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+  ARCH=$(dpkg --print-architecture) && \
+  if [ "$ARCH" = "arm64" ]; then \
+    # Option A: Force x64 platform for Apple Silicon Macs (uses Rosetta emulation)
+    echo "Detected ARM64 architecture. Installing x64 Flutter for compatibility..."; \
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64; \
+    # Install Flutter x64 version which will run under emulation
+    curl -L https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.5-stable.tar.xz -o flutter.tar.xz && \
+    tar xf flutter.tar.xz -C /home/node && \
+    rm flutter.tar.xz && \
+    echo 'export PATH="/home/node/flutter/bin:$PATH"' >> ~/.bashrc && \
+    echo 'export PATH="/home/node/flutter/bin:$PATH"' >> ~/.zshrc && \
+    /home/node/flutter/bin/flutter config --no-analytics && \
+    /home/node/flutter/bin/flutter doctor -v || true; \
+  else \
+    # x64 architecture - use asdf normally
+    asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
+    asdf install flutter 3.24.5 && \
+    asdf set --home flutter 3.24.5 && \
+    asdf reshim; \
+  fi
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
