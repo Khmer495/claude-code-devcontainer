@@ -138,13 +138,14 @@ RUN apt-get update && apt-get install -y \
 USER node
 
 # Install flutter via asdf
-# Set FLUTTER_STORAGE_BASE_URL to use the correct mirror for architecture
+# Note: Flutter requires specific setup for ARM64 architecture
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
   asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
-  export FLUTTER_STORAGE_BASE_URL="https://storage.googleapis.com" && \
-  asdf install flutter 3.24.5-stable && \
-  asdf set --home flutter 3.24.5-stable && \
-  asdf reshim
+  asdf install flutter latest && \
+  asdf set --home flutter latest && \
+  asdf reshim && \
+  flutter config --no-analytics && \
+  flutter doctor -v || true
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
