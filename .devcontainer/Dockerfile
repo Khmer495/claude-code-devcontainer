@@ -35,6 +35,11 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
+# Configure locale properly
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+  locale-gen && \
+  update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
 # Install AWS CLI v2 with architecture detection
 RUN ARCH=$(dpkg --print-architecture) && \
   if [ "$ARCH" = "arm64" ]; then \
@@ -82,7 +87,11 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 # Set up Homebrew environment
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc && \
-  echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc
+  echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc && \
+  echo 'export LANG=en_US.UTF-8' >> ~/.bashrc && \
+  echo 'export LC_ALL=en_US.UTF-8' >> ~/.bashrc && \
+  echo 'export LANG=en_US.UTF-8' >> ~/.zshrc && \
+  echo 'export LC_ALL=en_US.UTF-8' >> ~/.zshrc
 
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
