@@ -155,15 +155,15 @@ RUN apt-get update && apt-get install -y \
 
 USER node
 
-# Install flutter via asdf
-# Note: Flutter requires specific setup for ARM64 architecture
+# Install flutter via asdf with manual architecture selection
+# ARM64のDockerコンテナでFlutterを使う場合、x64版を使用する必要があります
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
   asdf plugin add flutter https://github.com/oae/asdf-flutter.git && \
-  asdf install flutter latest && \
-  asdf set --home flutter latest && \
-  asdf reshim && \
-  flutter config --no-analytics && \
-  flutter doctor -v || true
+  export ASDF_FLUTTER_VERSION_FILE=3.24.5-stable && \
+  export ASDF_FLUTTER_FORCE_PLATFORM=linux_x64 && \
+  asdf install flutter 3.24.5 && \
+  asdf set --home flutter 3.24.5 && \
+  asdf reshim || true
 
 # Copy and set up proxy scripts
 COPY squid.conf /usr/local/bin/
