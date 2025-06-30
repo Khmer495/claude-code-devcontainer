@@ -30,15 +30,24 @@ RUN apt update && apt install -y less \
 # Create linuxbrew home directory and set permissions
 RUN mkdir -p /home/linuxbrew && chown -R node:node /home/linuxbrew
 
-# Set locale environment variables
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
+# Set locale environment variables for Japanese
+ENV LANG=ja_JP.UTF-8
+ENV LANGUAGE=ja_JP:ja
+ENV LC_ALL=ja_JP.UTF-8
+ENV TZ=Asia/Tokyo
 
-# Configure locale properly
+# Configure locale properly for Japanese
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+  sed -i '/ja_JP.UTF-8/s/^# //g' /etc/locale.gen && \
   locale-gen && \
-  update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+  update-locale LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 && \
+  ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install Japanese fonts for better display
+RUN apt-get update && apt-get install -y \
+  fonts-noto-cjk \
+  fonts-noto-color-emoji \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install AWS CLI v2 with architecture detection
 RUN ARCH=$(dpkg --print-architecture) && \
@@ -88,10 +97,10 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc && \
   echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc && \
-  echo 'export LANG=en_US.UTF-8' >> ~/.bashrc && \
-  echo 'export LC_ALL=en_US.UTF-8' >> ~/.bashrc && \
-  echo 'export LANG=en_US.UTF-8' >> ~/.zshrc && \
-  echo 'export LC_ALL=en_US.UTF-8' >> ~/.zshrc
+  echo 'export LANG=ja_JP.UTF-8' >> ~/.bashrc && \
+  echo 'export LC_ALL=ja_JP.UTF-8' >> ~/.bashrc && \
+  echo 'export LANG=ja_JP.UTF-8' >> ~/.zshrc && \
+  echo 'export LC_ALL=ja_JP.UTF-8' >> ~/.zshrc
 
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
